@@ -3,11 +3,7 @@ using SVMLightLoader
 import Base.Test: @test
 
 
-@test !SVMLightLoader.isdata("# comment")
-@test !SVMLightLoader.isdata("\n")
-@test !SVMLightLoader.isdata("3.0")
-@test SVMLightLoader.isdata("3.0 20:27")
-@test SVMLightLoader.isdata("2.0 5:1.0 12:-3")
+println("Testing isnumeric")
 
 @test SVMLightLoader.isnumeric("4.0")
 @test SVMLightLoader.isnumeric("0")
@@ -16,33 +12,56 @@ import Base.Test: @test
 @test !SVMLightLoader.isnumeric("A")
 
 
-line_to_sparse_vector = SVMLightLoader.line_to_sparse_vector
+println("Testing line_to_data")
 
-vector, label = line_to_sparse_vector("-1 2:1.0 5:3.0", Float64, Int64)
+line_to_data = SVMLightLoader.line_to_data
+
+# when the format is invalid
+try line_to_data(" #comment") catch err @test isa(err, NoDataException) end
+try line_to_data("# comment") catch err @test isa(err, NoDataException) end
+try line_to_data("\n") catch err @test isa(err, NoDataException) end
+
+try line_to_data("-1 2:1.0 5:") catch err @test isa(err, InvalidFormatError) end
+try line_to_data("-1 :3") catch err @test isa(err, InvalidFormatError) end
+try line_to_data("-1") catch err @test isa(err, InvalidFormatError) end
+try line_to_data("-1 #comment") catch err @test isa(err, InvalidFormatError) end
+try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
+
+# when the format is correct
+vector, label = line_to_data("-1 2:1.0 5:3.0 #comment",
+                             ElementType=Float64, LabelType=Int64)
 @test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
 @test label == -1  # label should be Int64
 
-vector, label = line_to_sparse_vector("2 2:1 5:3", Float64, Float64)
+vector, label = line_to_data("2 2:1 5:3 #comment",
+                             ElementType=Float64, LabelType=Int64)
 @test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
 @test label == 2.0  # label should be Float64
 
 
-function test_iterable(filename, X, y)
-    assert(length(X) == length(y))
-
-    i = 1
-    for data in SVMLightFile(filename, Float64, Float64)
-        vector, label = data
-        @test vector == X[i]
-        @test label == y[i]
-        i += 1
-    end
-end
-
+println("Testing iteration of SVMLightFile")
 
 X = (sparsevec([2, 10, 15], [2.5, -5.2, 1.5]),
-     sparsevec([5, 12], [1.0, -3]),
-     sparsevec([20], [27]))
+     sparsevec([5, 12], [1.0, -3.0]),
+     sparsevec([20], [27.0]))
 y = (1.0, 2.0, 3.0)
 
-test_iterable("test.txt", X, y)
+i = 0
+for (vector, label) in SVMLightFile("test.txt", Float64, Float64)
+    i += 1
+    @test vector == X[i]
+    @test label == y[i]
+end
+@test i == length(X)
+
+# empty.txt contains only newlines and comments
+i = 1
+for (vector, label) in SVMLightFile("empty.txt", Float64, Float64)
+    i += 1
+end
+
+@test i == 1  # nothing should be loaded
+
+
+println("Testing length(s::SVMLightFile)")
+@test length(SVMLightFile("test.txt", Float64, Float64)) == length(X)
