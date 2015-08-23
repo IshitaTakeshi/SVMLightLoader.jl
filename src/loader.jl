@@ -72,10 +72,17 @@ function load_svmlight_file(filename; ElementType=Float64, LabelType=Int64)
 
     for line in eachline(open(filename))
         try
-            vector, label = line_to_data(line, ElementType, LabelType)
-            push!(X, vector)
-            push!(y, label)
-        catch
+            vector, label = line_to_data(line,
+                                         ElementType=ElementType,
+                                         LabelType=LabelType)
+            X = push!(X, vector)
+            y = push!(y, label)
+        catch error
+            if isa(error, NoDataException)
+                # do nothing
+                continue
+            end
+            throw(error)
         end
     end
 

@@ -39,12 +39,28 @@ vector, label = line_to_data("2 2:1 5:3 #comment",
 @test label == 2.0  # label should be Float64
 
 
-println("Testing iteration of SVMLightFile")
-
 X = (sparsevec([2, 10, 15], [2.5, -5.2, 1.5]),
      sparsevec([5, 12], [1.0, -3.0]),
      sparsevec([20], [27.0]))
 y = (1.0, 2.0, 3.0)
+
+
+println("Testing load_svmlight_file")
+vectors, labels = load_svmlight_file("test.txt")
+@test tuple(vectors...) == X
+@test tuple(labels...) == y
+
+error_thrown = false
+try
+    load_svmlight_file("invalid.txt")
+catch error
+    error_thrown = true
+    @test isa(error, InvalidFormatError)
+end
+assert(error_thrown)
+
+
+println("Testing iteration of SVMLightFile")
 
 i = 0
 for (vector, label) in SVMLightFile("test.txt", Float64, Float64)
@@ -61,6 +77,16 @@ for (vector, label) in SVMLightFile("empty.txt", Float64, Float64)
 end
 
 @test i == 1  # nothing should be loaded
+
+error_thrown = false
+try
+    for (vector, label) in SVMLightFile("invalid.txt", Float64, Float64)
+    end
+catch error
+    error_thrown = true
+    @test isa(error, InvalidFormatError)
+end
+assert(error_thrown)
 
 
 println("Testing length(s::SVMLightFile)")

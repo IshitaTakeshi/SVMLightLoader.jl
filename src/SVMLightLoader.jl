@@ -42,9 +42,9 @@ function Base.done(s::SVMLightFile, status)
         catch error
             if isa(error, NoDataException)
                 # do nothing
-            elseif isa(error, InvalidFormatError)
-                throw(error)
+                continue
             end
+            throw(error)
         end
     end
     return true
