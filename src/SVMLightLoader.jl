@@ -19,7 +19,7 @@ type SVMLightFile
     ElementType
     LabelType
 
-    function SVMLightFile(filename, ElementType = Float64, LabelType = Int64)
+    function SVMLightFile(filename, ElementType=Float64, LabelType=Int64)
         return new(open(filename), (), ElementType, LabelType)
     end
 end

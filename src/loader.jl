@@ -16,7 +16,14 @@ isnumeric(s::String) = ismatch(r"[0-9]", s)
 iscomment(line) = startswith(line, "#")
 
 
-function line_to_data(line; ElementType=Float64, LabelType=Int64)
+"""
+Extract a sparse vector of `ndim` dimensions and its label
+from the given string line.
+If `ndim` is not passed, the vector dimension is automatically determined by
+the contents of the given string line.
+"""
+function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
+
     convert_element(x) = convert(ElementType, x)
     convert_label(x) = convert(LabelType, x)
 
@@ -56,7 +63,11 @@ function line_to_data(line; ElementType=Float64, LabelType=Int64)
         end
     end
 
-    vector = sparsevec(dict)
+    if ndim > 0
+        vector = sparsevec(dict, ndim)
+    else
+        vector = sparsevec(dict)
+    end
 
     vector = map(convert_element, vector)
     label = convert_label(label)
