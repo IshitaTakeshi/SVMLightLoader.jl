@@ -77,13 +77,14 @@ end
 
 
 
-function load_svmlight_file(filename; ElementType=Float64, LabelType=Int64)
+function load_svmlight_file(filename, ndim=-1;
+                            ElementType=Float64, LabelType=Int64)
     X = Array(SparseMatrixCSC, 0)
     y = Array(LabelType, 0)
 
     for line in eachline(open(filename))
         try
-            vector, label = line_to_data(line,
+            vector, label = line_to_data(line, ndim,
                                          ElementType=ElementType,
                                          LabelType=LabelType)
             X = push!(X, vector)

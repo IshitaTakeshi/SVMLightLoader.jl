@@ -58,16 +58,24 @@ catch error
 end
 @test error_thrown
 
-
 X = (sparsevec([2, 10, 15], [2.5, -5.2, 1.5]),
      sparsevec([5, 12], [1.0, -3.0]),
      sparsevec([20], [27.0]))
 y = (1.0, 2.0, 3.0)
 
+ndim = 30
+Xndim = (
+     sparsevec([2, 10, 15], [2.5, -5.2, 1.5], ndim),
+     sparsevec([5, 12], [1.0, -3.0], ndim),
+     sparsevec([20], [27.0], ndim))
 
 println("Testing load_svmlight_file")
 vectors, labels = load_svmlight_file("test.txt")
 @test tuple(vectors...) == X
+@test tuple(labels...) == y
+
+vectors, labels = load_svmlight_file("test.txt", ndim)
+@test tuple(vectors...) == Xndim
 @test tuple(labels...) == y
 
 error_thrown = false
@@ -83,16 +91,28 @@ end
 println("Testing iteration of SVMLightFile")
 
 i = 0
-for (vector, label) in SVMLightFile("test.txt", Float64, Float64)
+for (vector, label) in SVMLightFile("test.txt")
     i += 1
     @test vector == X[i]
     @test label == y[i]
 end
 @test i == length(X)
 
+i = 0
+iter = SVMLightFile("test.txt", ndim, ElementType=Float64, LabelType=Float64)
+for (vector, label) in iter
+    i += 1
+    @test vector == Xndim[i]
+    @test label == y[i]
+
+    @test typeof(vector) == SparseMatrixCSC{Float64,Int64}
+    @test typeof(label) == Float64
+end
+@test i == length(X)
+
 # empty.txt contains only newlines and comments
 i = 1
-for (vector, label) in SVMLightFile("empty.txt", Float64, Float64)
+for (vector, label) in SVMLightFile("empty.txt")
     i += 1
 end
 
@@ -100,8 +120,7 @@ end
 
 error_thrown = false
 try
-    for (vector, label) in SVMLightFile("invalid.txt", Float64, Float64)
-    end
+    for (vector, label) in SVMLightFile("invalid.txt") end
 catch error
     error_thrown = true
     @test isa(error, InvalidFormatError)
@@ -110,4 +129,4 @@ end
 
 
 println("Testing length(s::SVMLightFile)")
-@test length(SVMLightFile("test.txt", Float64, Float64)) == length(X)
+@test length(SVMLightFile("test.txt")) == length(X)

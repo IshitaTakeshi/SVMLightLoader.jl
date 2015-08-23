@@ -15,12 +15,14 @@ include("loader.jl")
 
 type SVMLightFile
     file::IOStream
+    ndim::Int64
     data
     ElementType
     LabelType
 
-    function SVMLightFile(filename, ElementType=Float64, LabelType=Int64)
-        return new(open(filename), (), ElementType, LabelType)
+    function SVMLightFile(filename, ndim=-1;
+                          ElementType=Float64, LabelType=Int64)
+        return new(open(filename), ndim, (), ElementType, LabelType)
     end
 end
 
@@ -35,7 +37,7 @@ function Base.done(s::SVMLightFile, status)
     while !eof(s.file)
         line = readline(s.file)
         try
-            s.data = line_to_data(line,
+            s.data = line_to_data(line, s.ndim,
                                   ElementType=s.ElementType,
                                   LabelType=s.LabelType)
             return false
