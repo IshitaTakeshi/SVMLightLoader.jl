@@ -57,7 +57,7 @@ catch error
     error_thrown = true
     @test isa(error, InvalidFormatError)
 end
-assert(error_thrown)
+@test error_thrown
 
 
 println("Testing iteration of SVMLightFile")
