@@ -31,12 +31,32 @@ try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
 vector, label = line_to_data("-1 2:1.0 5:3.0 #comment",
                              ElementType=Float64, LabelType=Int64)
 @test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
-@test label == -1  # label should be Int64
+@test label == -1
+@test typeof(label) == Int64 # label should be Int64
 
 vector, label = line_to_data("2 2:1 5:3 #comment",
-                             ElementType=Float64, LabelType=Int64)
+                             ElementType=Float64, LabelType=Float64)
 @test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
-@test label == 2.0  # label should be Float64
+@test label == 2.0
+@test typeof(label) == Float64  # label should be Float64
+
+
+#when the vector dimension is specified
+vector, label = line_to_data("2 2:1 5:3 #comment", 10,
+                             ElementType=Float64, LabelType=Int64)
+@test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0), 10)
+@test label == 2.0
+@test typeof(label) == Int64  # label should be Int64
+
+error_thrown = false
+try
+    vector, label = line_to_data("2 2:1 5:3 #comment", 4,
+                                 ElementType=Float64, LabelType=Int64)
+catch error
+    error_thrown = true
+    @test isa(error, ArgumentError)
+end
+@test error_thrown
 
 
 X = (sparsevec([2, 10, 15], [2.5, -5.2, 1.5]),
