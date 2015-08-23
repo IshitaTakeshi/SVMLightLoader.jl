@@ -1,9 +1,9 @@
 SVMLightLoader
 ==============
 
-# Loader of svmlight / liblinear format files
+## The Loader of svmlight / liblinear format files
 
-## Usage
+### Usage
 
 
 ```
