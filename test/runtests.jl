@@ -1,3 +1,4 @@
+import SparseVectors
 using SVMLightLoader
 
 import Base.Test: @test
@@ -23,9 +24,22 @@ try line_to_data("\n") catch err @test isa(err, NoDataException) end
 
 try line_to_data("-1 2:1.0 5:") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("-1 :3") catch err @test isa(err, InvalidFormatError) end
-try line_to_data("-1") catch err @test isa(err, InvalidFormatError) end
-try line_to_data("-1 #comment") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
+
+vector, label = line_to_data("-1")
+@test vector == spzeros(0, 1)
+@test size(vector, 1) == 0
+@test label == -1
+
+vector, label = line_to_data("-1 #comment")
+@test vector == spzeros(0, 1)
+@test size(vector, 1) == 0
+@test label == -1
+
+vector, label = line_to_data("-1 #comment", 20)
+@test vector == spzeros(20, 1)
+@test size(vector, 1) == 20
+@test label == -1
 
 # when the format is correct
 vector, label = line_to_data("-1 2:1.0 5:3.0 #comment",
@@ -58,25 +72,24 @@ catch error
 end
 @test error_thrown
 
-X = (sparsevec([2, 10, 15], [2.5, -5.2, 1.5]),
-     sparsevec([5, 12], [1.0, -3.0]),
-     sparsevec([20], [27.0]))
-y = (1.0, 2.0, 3.0)
+I = [2, 10, 15, 5, 12, 20]
+J = [1, 1, 1, 2, 2, 3]
+V = [2.5, -5.2, 1.5, 1.0, -3.0, 27.0]
+X = sparse(I, J, V)
+
+y = [1.0, 2.0, 3.0]
 
 ndim = 30
-Xndim = (
-     sparsevec([2, 10, 15], [2.5, -5.2, 1.5], ndim),
-     sparsevec([5, 12], [1.0, -3.0], ndim),
-     sparsevec([20], [27.0], ndim))
+Xndim = sparse(I, J, V, ndim, maximum(J), Base.AddFun())
 
 println("Testing load_svmlight_file")
 vectors, labels = load_svmlight_file("test.txt")
-@test tuple(vectors...) == X
-@test tuple(labels...) == y
+@test vectors == X
+@test labels == y
 
 vectors, labels = load_svmlight_file("test.txt", ndim)
-@test tuple(vectors...) == Xndim
-@test tuple(labels...) == y
+@test vectors == Xndim
+@test labels == y
 
 error_thrown = false
 try
@@ -93,22 +106,22 @@ println("Testing iteration of SVMLightFile")
 i = 0
 for (vector, label) in SVMLightFile("test.txt")
     i += 1
-    @test vector == X[i]
+    @test findnz(vector) == findnz(X[:, i])
     @test label == y[i]
 end
-@test i == length(X)
+@test i == size(X, 2)
 
 i = 0
 iter = SVMLightFile("test.txt", ndim, ElementType=Float64, LabelType=Float64)
 for (vector, label) in iter
     i += 1
-    @test vector == Xndim[i]
+    @test findnz(vector) == findnz(X[:, i])
     @test label == y[i]
 
     @test typeof(vector) == SparseMatrixCSC{Float64,Int64}
     @test typeof(label) == Float64
 end
-@test i == length(X)
+@test i == size(X, 2)
 
 # empty.txt contains only newlines and comments
 i = 1
@@ -129,4 +142,4 @@ end
 
 
 println("Testing length(s::SVMLightFile)")
-@test length(SVMLightFile("test.txt")) == length(X)
+@test length(SVMLightFile("test.txt")) == size(X, 2)

@@ -8,7 +8,11 @@ parsefloat(x) = parse(Float64, x)
 parseint(x) = parse(Int64, x)
 
 
-type InvalidFormatError <: Exception end
+type InvalidFormatError <: Exception
+    msg
+    InvalidFormatError(msg="") = new(msg)
+end
+
 type NoDataException <: Exception end
 
 
@@ -23,7 +27,6 @@ If `ndim` is not passed, the vector dimension is automatically determined by
 the contents of the given string line.
 """
 function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
-
     convert_element(x) = convert(ElementType, x)
     convert_label(x) = convert(LabelType, x)
 
@@ -31,20 +34,25 @@ function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
     splitted = split(line, " ")
 
     if iscomment(line) || length(line) == 0
+        #the line contains only a comment, newline or whitespaces
         throw(NoDataException())
     end
 
-    if length(splitted) < 2
-        # no vector per line
-        throw(InvalidFormatError())
+    try
+        label = parsefloat(splitted[1])
+    catch error
+        throw(InvalidFormatError(error.msg))
     end
 
-    if startswith(splitted[2], "#")
-        #case such as line = "-1 #comment"
-        throw(InvalidFormatError())
+    if length(splitted) < 2 || startswith(splitted[2], "#")
+        # no vector per line or the case such as line = "-1 #comment"
+        if ndim > 0
+            vector = spzeros(ndim, 1)
+        else
+            vector = spzeros(0, 1)
+        end
+        return vector, label
     end
-
-    label = parsefloat(splitted[1])
 
     dict = Dict{Int64, Float64}()
     for element in splitted[2:end]
@@ -58,13 +66,18 @@ function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
         try
             index, value = parseint(pair[1]), parsefloat(pair[2])
             dict[index] = value
-        catch
-            throw(InvalidFormatError())
+        catch error
+            throw(InvalidFormatError(error.msg))
         end
     end
 
     if ndim > 0
-        vector = sparsevec(dict, ndim)
+        try
+            vector = sparsevec(dict, ndim)
+        catch error
+            msg = "ndim is smaller than length(sparsevec)"
+            throw(ArgumentError(msg))
+        end
     else
         vector = sparsevec(dict)
     end
@@ -79,16 +92,25 @@ end
 
 function load_svmlight_file(filename, ndim=-1;
                             ElementType=Float64, LabelType=Int64)
-    X = Array(SparseMatrixCSC, 0)
+    I = Int64[]
+    J = Int64[]
+    V = Int64[]
     y = Array(LabelType, 0)
 
+    i = 1
     for line in eachline(open(filename))
         try
             vector, label = line_to_data(line, ndim,
                                          ElementType=ElementType,
                                          LabelType=LabelType)
-            X = push!(X, vector)
+            row, col, val = findnz(vector)
+            I = vcat(I, row)
+            J = vcat(J, col*i)
+            V = vcat(V, val)
+
             y = push!(y, label)
+
+            i += 1
         catch error
             if isa(error, NoDataException)
                 # do nothing
@@ -98,5 +120,10 @@ function load_svmlight_file(filename, ndim=-1;
         end
     end
 
+    if ndim < 0
+        X = sparse(I, J, V)
+    else
+        X = sparse(I, J, V, ndim, i-1, Base.AddFun())
+    end
     return X, y
 end
