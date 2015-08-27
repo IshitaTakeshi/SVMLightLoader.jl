@@ -1,4 +1,3 @@
-import SparseVectors
 using SVMLightLoader
 
 import Base.Test: @test
@@ -26,51 +25,22 @@ try line_to_data("-1 2:1.0 5:") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("-1 :3") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
 
-vector, label = line_to_data("-1")
-@test vector == spzeros(0, 1)
-@test size(vector, 1) == 0
+(indices, values), label = line_to_data("-1")
+@test (indices, values) == (Int64[], Float64[])
 @test label == -1
 
-vector, label = line_to_data("-1 #comment")
-@test vector == spzeros(0, 1)
-@test size(vector, 1) == 0
-@test label == -1
-
-vector, label = line_to_data("-1 #comment", 20)
-@test vector == spzeros(20, 1)
-@test size(vector, 1) == 20
+(indices, values), label = line_to_data("-1 #comment")
+@test (indices, values) == (Int64[], Float64[])
 @test label == -1
 
 # when the format is correct
-vector, label = line_to_data("-1 2:1.0 5:3.0 #comment",
-                             ElementType=Float64, LabelType=Int64)
-@test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
+vector, label = line_to_data("-1 2:1.0 5:3.0 #comment")
+(indices, values) == ([2, 5], [1.0, 3.0])
 @test label == -1
-@test typeof(label) == Int64 # label should be Int64
 
-vector, label = line_to_data("2 2:1 5:3 #comment",
-                             ElementType=Float64, LabelType=Float64)
-@test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0))
-@test label == 2.0
-@test typeof(label) == Float64  # label should be Float64
-
-
-#when the vector dimension is specified
-vector, label = line_to_data("2 2:1 5:3 #comment", 10,
-                             ElementType=Float64, LabelType=Int64)
-@test vector == sparsevec(Dict{Int64, Float64}(2 => 1.0, 5 => 3.0), 10)
-@test label == 2.0
-@test typeof(label) == Int64  # label should be Int64
-
-error_thrown = false
-try
-    vector, label = line_to_data("2 2:1 5:3 #comment", 4,
-                                 ElementType=Float64, LabelType=Int64)
-catch error
-    error_thrown = true
-    @test isa(error, ArgumentError)
-end
-@test error_thrown
+vector, label = line_to_data("2 2:1 5:3 #comment")
+(indices, values) == ([2, 5], [1.0, 3.0])
+@test label == 2
 
 I = [2, 10, 15, 5, 12, 20]
 J = [1, 1, 1, 2, 2, 3]
@@ -112,14 +82,11 @@ end
 @test i == size(X, 2)
 
 i = 0
-iter = SVMLightFile("test.txt", ndim, ElementType=Float64, LabelType=Float64)
+iter = SVMLightFile("test.txt", ndim)
 for (vector, label) in iter
     i += 1
     @test findnz(vector) == findnz(X[:, i])
     @test label == y[i]
-
-    @test typeof(vector) == SparseMatrixCSC{Float64,Int64}
-    @test typeof(label) == Float64
 end
 @test i == size(X, 2)
 

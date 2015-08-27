@@ -6,8 +6,7 @@
 
 module SVMLightLoader
 
-export SVMLightFile, load_svmlight_file, line_to_data,
-       InvalidFormatError, NoDataException
+export SVMLightFile, load_svmlight_file, InvalidFormatError, NoDataException
 
 
 include("loader.jl")
@@ -17,12 +16,9 @@ type SVMLightFile
     file::IOStream
     ndim::Int64
     data
-    ElementType
-    LabelType
 
-    function SVMLightFile(filename, ndim=-1;
-                          ElementType=Float64, LabelType=Int64)
-        return new(open(filename), ndim, (), ElementType, LabelType)
+    function SVMLightFile(filename, ndim=-1)
+        return new(open(filename), ndim, ())
     end
 end
 
@@ -37,9 +33,16 @@ function Base.done(s::SVMLightFile, status)
     while !eof(s.file)
         line = readline(s.file)
         try
-            s.data = line_to_data(line, s.ndim,
-                                  ElementType=s.ElementType,
-                                  LabelType=s.LabelType)
+            ((indices, values), label) = line_to_data(line)
+
+            if s.ndim < 0
+                vector = sparsevec(indices, values)
+            else
+                vector = sparsevec(indices, values, s.ndim, Base.AddFun())
+            end
+
+            s.data = (vector, label)
+
             return false
         catch error
             if isa(error, NoDataException)

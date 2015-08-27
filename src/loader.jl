@@ -1,7 +1,7 @@
 # Copyright (c) 2015 Ishita Takeshi
 # License is MIT
 
-#replace multiple whitespaces with single whitespace
+# replace multiple whitespaces with single whitespace
 strip_line(line) = replace(strip(line), r"\s+", " ")
 
 parsefloat(x) = parse(Float64, x)
@@ -26,10 +26,7 @@ from the given string line.
 If `ndim` is not passed, the vector dimension is automatically determined by
 the contents of the given string line.
 """
-function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
-    convert_element(x) = convert(ElementType, x)
-    convert_label(x) = convert(LabelType, x)
-
+function line_to_data(line)
     line = strip_line(line)
     splitted = split(line, " ")
 
@@ -38,6 +35,7 @@ function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
         throw(NoDataException())
     end
 
+    label = 0  # define label once here
     try
         label = parsefloat(splitted[1])
     catch error
@@ -46,15 +44,11 @@ function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
 
     if length(splitted) < 2 || startswith(splitted[2], "#")
         # no vector per line or the case such as line = "-1 #comment"
-        if ndim > 0
-            vector = spzeros(ndim, 1)
-        else
-            vector = spzeros(0, 1)
-        end
-        return vector, label
+        return (Int64[], Float64[]), label
     end
 
-    dict = Dict{Int64, Float64}()
+    indices = Int64[]
+    values = Float64[]
     for element in splitted[2:end]
         if startswith(element, "#")
             # regard the remaining characters as a comment
@@ -64,49 +58,32 @@ function line_to_data(line, ndim=-1; ElementType=Float64, LabelType=Int64)
         pair = split(element, ":")
 
         try
-            index, value = parseint(pair[1]), parsefloat(pair[2])
-            dict[index] = value
+            index = parseint(pair[1])
+            value = parsefloat(pair[2])
+            push!(indices, index)
+            push!(values, value)
         catch error
             throw(InvalidFormatError(error.msg))
         end
     end
 
-    if ndim > 0
-        try
-            vector = sparsevec(dict, ndim)
-        catch error
-            msg = "ndim is smaller than length(sparsevec)"
-            throw(ArgumentError(msg))
-        end
-    else
-        vector = sparsevec(dict)
-    end
-
-    vector = map(convert_element, vector)
-    label = convert_label(label)
-
-    return vector, label
+    return ((indices, values), label)
 end
 
 
-
-function load_svmlight_file(filename, ndim=-1;
-                            ElementType=Float64, LabelType=Int64)
+function load_svmlight_file(filename, ndim=-1)
     I = Int64[]
     J = Int64[]
-    V = Int64[]
-    y = Array(LabelType, 0)
+    V = Float64[]
+    y = Array(Float64, 0)
 
     i = 1
     for line in eachline(open(filename))
         try
-            vector, label = line_to_data(line, ndim,
-                                         ElementType=ElementType,
-                                         LabelType=LabelType)
-            row, col, val = findnz(vector)
-            I = vcat(I, row)
-            J = vcat(J, col*i)
-            V = vcat(V, val)
+            ((indices, values), label) = line_to_data(line)
+            append!(I, indices)
+            append!(J, ones(length(indices))*i)
+            append!(V, values)
 
             y = push!(y, label)
 
