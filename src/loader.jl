@@ -1,6 +1,10 @@
 # Copyright (c) 2015 Ishita Takeshi
 # License is MIT
 
+
+using Compat
+
+
 # replace multiple whitespaces with single whitespace
 strip_line(line) = replace(strip(line), r"\s+", " ")
 
@@ -42,9 +46,11 @@ function line_to_data(line)
         throw(InvalidFormatError(error.msg))
     end
 
+    @compat begin
     if length(splitted) < 2 || startswith(splitted[2], "#")
         # no vector per line or the case such as line = "-1 #comment"
         return (Int64[], Float64[]), label
+    end
     end
 
     indices = Int64[]
@@ -100,7 +106,7 @@ function load_svmlight_file(filename, ndim=-1)
     if ndim < 0
         X = sparse(I, J, V)
     else
-        X = sparse(I, J, V, ndim, i-1, Base.AddFun())
+        X = sparse(I, J, V, ndim, i-1)
     end
     return X, y
 end

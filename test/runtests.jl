@@ -1,6 +1,7 @@
-using SVMLightLoader
-
 import Base.Test: @test
+using Compat
+
+using SVMLightLoader
 
 
 println("Testing isnumeric")
@@ -16,14 +17,15 @@ println("Testing line_to_data")
 
 line_to_data = SVMLightLoader.line_to_data
 
+@compat begin
 # when the format is invalid
 try line_to_data(" #comment") catch err @test isa(err, NoDataException) end
 try line_to_data("# comment") catch err @test isa(err, NoDataException) end
 try line_to_data("\n") catch err @test isa(err, NoDataException) end
-
 try line_to_data("-1 2:1.0 5:") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("-1 :3") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
+end
 
 (indices, values), label = line_to_data("-1")
 @test (indices, values) == (Int64[], Float64[])
@@ -50,7 +52,7 @@ X = sparse(I, J, V)
 y = [1.0, 2.0, 3.0]
 
 ndim = 30
-Xndim = sparse(I, J, V, ndim, maximum(J), Base.AddFun())
+Xndim = sparse(I, J, V, ndim, maximum(J))
 
 println("Testing load_svmlight_file")
 vectors, labels = load_svmlight_file("test.txt")

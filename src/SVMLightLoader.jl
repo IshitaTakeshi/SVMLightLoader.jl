@@ -22,6 +22,7 @@ type SVMLightFile
     end
 end
 
+
 #status is not used. anything is ok to be set
 Base.start(::SVMLightFile) = "#"
 
@@ -38,7 +39,7 @@ function Base.done(s::SVMLightFile, status)
             if s.ndim < 0
                 vector = sparsevec(indices, values)
             else
-                vector = sparsevec(indices, values, s.ndim, Base.AddFun())
+                vector = sparsevec(indices, values, s.ndim)
             end
 
             s.data = (vector, label)
