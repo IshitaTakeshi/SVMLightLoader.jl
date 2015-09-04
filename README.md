@@ -23,7 +23,7 @@ for (vector, label) in SVMLightFile("test.txt")
     dosomething(vector, label)
 end
 
-for (vector, label) in SVMLightFile("test.txt")
+for (vector, label) in SVMLightFile("test.txt", ndim)
     dosomething(vector, label)
 end
 ```
