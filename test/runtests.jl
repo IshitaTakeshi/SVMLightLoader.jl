@@ -54,6 +54,7 @@ y = [1.0, 2.0, 3.0]
 ndim = 30
 Xndim = sparse(I, J, V, ndim, maximum(J))
 
+
 println("Testing load_svmlight_file")
 vectors, labels = load_svmlight_file("test.txt")
 @test vectors == X
@@ -84,8 +85,7 @@ end
 @test i == size(X, 2)
 
 i = 0
-iter = SVMLightFile("test.txt", ndim)
-for (vector, label) in iter
+for (vector, label) in SVMLightFile("test.txt", ndim)
     i += 1
     @test findnz(vector) == findnz(X[:, i])
     @test label == y[i]
@@ -112,3 +112,12 @@ end
 
 println("Testing length(s::SVMLightFile)")
 @test length(SVMLightFile("test.txt")) == size(X, 2)
+
+
+println("Testing List Comprehensions")
+
+list = [label for (vector, label) in SVMLightFile("empty.txt")]
+@test list == []
+
+list = [label for (vector, label) in SVMLightFile("test.txt")]
+@test list == [1.0, 2.0, 3.0]

@@ -5,19 +5,14 @@
 using Compat
 
 
+include("exception.jl")
+
+
 # replace multiple whitespaces with single whitespace
 strip_line(line) = replace(strip(line), r"\s+", " ")
 
 parsefloat(x) = parse(Float64, x)
 parseint(x) = parse(Int64, x)
-
-
-type InvalidFormatError <: Exception
-    msg
-    InvalidFormatError(msg="") = new(msg)
-end
-
-type NoDataException <: Exception end
 
 
 isnumeric(s::String) = ismatch(r"[0-9]", s)
