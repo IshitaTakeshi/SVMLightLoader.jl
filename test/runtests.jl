@@ -1,5 +1,4 @@
 import Base.Test: @test
-using Compat
 
 using SVMLightLoader
 
@@ -17,7 +16,6 @@ println("Testing line_to_data")
 
 line_to_data = SVMLightLoader.line_to_data
 
-@compat begin
 # when the format is invalid
 try line_to_data(" #comment") catch err @test isa(err, NoDataException) end
 try line_to_data("# comment") catch err @test isa(err, NoDataException) end
@@ -25,7 +23,6 @@ try line_to_data("\n") catch err @test isa(err, NoDataException) end
 try line_to_data("-1 2:1.0 5:") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("-1 :3") catch err @test isa(err, InvalidFormatError) end
 try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
-end
 
 (indices, values), label = line_to_data("-1")
 @test (indices, values) == (Int64[], Float64[])

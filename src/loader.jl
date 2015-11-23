@@ -1,12 +1,7 @@
 # Copyright (c) 2015 Ishita Takeshi
 # License is MIT
 
-
-using Compat
-
-
 include("exception.jl")
-
 
 # replace multiple whitespaces with single whitespace
 strip_line(line) = replace(strip(line), r"\s+", " ")
@@ -14,10 +9,8 @@ strip_line(line) = replace(strip(line), r"\s+", " ")
 parsefloat(x) = parse(Float64, x)
 parseint(x) = parse(Int64, x)
 
-
-isnumeric(s::String) = ismatch(r"[0-9]", s)
+isnumeric(s::AbstractString) = ismatch(r"[0-9]", s)
 iscomment(line) = startswith(line, "#")
-
 
 """
 Extract a sparse vector of `ndim` dimensions and its label
@@ -41,11 +34,9 @@ function line_to_data(line)
         throw(InvalidFormatError(error.msg))
     end
 
-    @compat begin
     if length(splitted) < 2 || startswith(splitted[2], "#")
         # no vector per line or the case such as line = "-1 #comment"
         return (Int64[], Float64[]), label
-    end
     end
 
     indices = Int64[]
