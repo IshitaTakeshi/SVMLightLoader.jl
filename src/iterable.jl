@@ -15,6 +15,7 @@ immutable SVMLightFile{HASDIM}
     end
 end
 
+
 function SVMLightFile(filename, ndim::Int = -1)
     SVMLightFile{ndim >= 0}(filename, ndim)
 end
