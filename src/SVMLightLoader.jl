@@ -3,10 +3,13 @@
 # Copyright (c) 2015 Ishita Takeshi
 # License is MIT
 
-
 module SVMLightLoader
 
-export SVMLightFile, load_svmlight_file, InvalidFormatError, NoDataException
+export
+    SVMLightFile,
+    load_svmlight_file,
+    InvalidFormatError,
+    NoDataException
 
 include("exception.jl")
 include("loader.jl")

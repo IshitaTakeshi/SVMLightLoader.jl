@@ -1,7 +1,6 @@
 # Copyright (c) 2015 Ishita Takeshi
 # License is MIT
 
-include("exception.jl")
 
 # replace multiple whitespaces with single whitespace
 strip_line(line) = replace(strip(line), r"\s+", " ")
@@ -11,6 +10,7 @@ parseint(x) = parse(Int64, x)
 
 isnumeric(s::AbstractString) = ismatch(r"[0-9]", s)
 iscomment(line) = startswith(line, "#")
+
 
 """
 Extract a sparse vector of `ndim` dimensions and its label
@@ -63,7 +63,7 @@ function line_to_data(line)
 end
 
 
-function load_svmlight_file(filename, ndim=-1)
+function load_svmlight_file(filename, ndim = -1)
     I = Int64[]
     J = Int64[]
     V = Float64[]

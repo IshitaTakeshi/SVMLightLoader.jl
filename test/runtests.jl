@@ -33,12 +33,12 @@ try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
 @test label == -1
 
 # when the format is correct
-vector, label = line_to_data("-1 2:1.0 5:3.0 #comment")
-(indices, values) == ([2, 5], [1.0, 3.0])
+(indices, values), label = line_to_data("-1 2:1.0 5:3.0 #comment")
+@test (indices, values) == ([2, 5], [1.0, 3.0])
 @test label == -1
 
-vector, label = line_to_data("2 2:1 5:3 #comment")
-(indices, values) == ([2, 5], [1.0, 3.0])
+(indices, values), label = line_to_data("2 2:1 5:3 #comment")
+@test (indices, values) == ([2, 5], [1.0, 3.0])
 @test label == 2
 
 I = [2, 10, 15, 5, 12, 20]
@@ -53,6 +53,7 @@ Xndim = sparse(I, J, V, ndim, maximum(J))
 
 
 println("Testing load_svmlight_file")
+
 vectors, labels = load_svmlight_file("test.txt")
 @test vectors == X
 @test labels == y
@@ -108,6 +109,7 @@ end
 
 
 println("Testing length(s::SVMLightFile)")
+
 @test length(SVMLightFile("test.txt")) == size(X, 2)
 
 

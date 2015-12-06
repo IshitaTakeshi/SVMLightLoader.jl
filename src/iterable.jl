@@ -4,41 +4,38 @@
 # License is MIT
 
 
-include("exception.jl")
-include("loader.jl")
-
-
-# closure for generating sparsevector
-function get_sparsevector(ndim)
-    if ndim < 0
-        sparsevector(indices, values) = sparsevec(indices, values)
-    else
-        sparsevector(indices, values) = sparsevec(indices, values, ndim)
-    end
-    return sparsevector
-end
-
-
 #TODO make this immutable
-type SVMLightFile
+immutable SVMLightFile{HASDIM}
     file::IOStream
+    ndim::Int
 
-    function SVMLightFile(filename, ndim=-1)
-        global sparsevector
-        sparsevector = get_sparsevector(ndim)
-        return new(open(filename))
+    function SVMLightFile(filename, ndim::Int)
+        @assert HASDIM == (ndim >= 0)
+        return new(open(filename), ndim)
     end
 end
+
+function SVMLightFile(filename, ndim::Int = -1)
+    SVMLightFile{ndim >= 0}(filename, ndim)
+end
+
+
+sparsevector(s::SVMLightFile{false}, indices, values) =
+    sparsevec(indices, values)
+
+sparsevector(s::SVMLightFile{true}, indices, values) =
+    sparsevec(indices, values, s.ndim)
 
 
 # read line from file stream until valid data obtained
 # return nothing if reach eos
-function read_next_data(file)
+function read_next_data(s::SVMLightFile)
+    file = s.file
     while !eof(file)
         line = readline(file)
         try
             ((indices, values), label) = line_to_data(line)
-            vector = sparsevector(indices, values)
+            vector = sparsevector(s, indices, values)
             return (vector, label)
         catch error
             if isa(error, NoDataException)
@@ -57,7 +54,7 @@ function Base.start(s::SVMLightFile)
     # Reread from the top of the file after counting valid lines
     # when List Comprehensions used
     seek(s.file, 0)
-    read_next_data(s.file)
+    read_next_data(s)
 end
 
 
@@ -67,7 +64,7 @@ end
 
 
 function Base.next(s::SVMLightFile, currentdata)
-    nextdata = read_next_data(s.file)
+    nextdata = read_next_data(s)
     return (currentdata, nextdata)
 end
 
