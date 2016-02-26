@@ -59,27 +59,27 @@ function line_to_data(line)
         end
     end
 
-    return ((indices, values), label)
+    return (indices, values), label
 end
 
 
 function load_svmlight_file(filename, ndim = -1)
-    I = Int64[]
-    J = Int64[]
+    I = Int64[]  # column indices
+    R = Int64[]  # row numbers
     V = Float64[]
     y = Array(Float64, 0)
 
-    i = 1
+    row_number = 1
     for line in eachline(open(filename))
         try
-            ((indices, values), label) = line_to_data(line)
+            (indices, values), label = line_to_data(line)
+            append!(R, ones(length(indices))*row_number)
             append!(I, indices)
-            append!(J, ones(length(indices))*i)
             append!(V, values)
 
             y = push!(y, label)
 
-            i += 1
+            row_number += 1
         catch error
             if isa(error, NoDataException)
                 # do nothing
@@ -90,9 +90,9 @@ function load_svmlight_file(filename, ndim = -1)
     end
 
     if ndim < 0
-        X = sparse(I, J, V)
+        X = sparse(R, I, V)
     else
-        X = sparse(I, J, V, ndim, i-1)
+        X = sparse(R, I, V, row_number-1, ndim)
     end
     return X, y
 end

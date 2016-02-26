@@ -42,14 +42,14 @@ try line_to_data("A") catch err @test isa(err, InvalidFormatError) end
 @test label == 2
 
 I = [2, 10, 15, 5, 12, 20]
-J = [1, 1, 1, 2, 2, 3]
+R = [1, 1, 1, 2, 2, 3]
 V = [2.5, -5.2, 1.5, 1.0, -3.0, 27.0]
-X = sparse(I, J, V)
+X = sparse(R, I, V)
 
 y = [1.0, 2.0, 3.0]
 
 ndim = 30
-Xndim = sparse(I, J, V, ndim, maximum(J))
+Xndim = sparse(R, I, V, maximum(R), ndim)
 
 
 println("Testing load_svmlight_file")
@@ -77,18 +77,20 @@ println("Testing iteration of SVMLightFile")
 i = 0
 for (vector, label) in SVMLightFile("test.txt")
     i += 1
-    @test findnz(vector) == findnz(X[:, i])
+    x = X[i, :]'  #x is a column vector
+    @test findnz(vector) == findnz(x)
     @test label == y[i]
 end
-@test i == size(X, 2)
+@test i == size(X, 1)
 
 i = 0
 for (vector, label) in SVMLightFile("test.txt", ndim)
     i += 1
-    @test findnz(vector) == findnz(X[:, i])
+    x = X[i, :]'  #x is a column vector
+    @test findnz(vector) == findnz(x)
     @test label == y[i]
 end
-@test i == size(X, 2)
+@test i == size(X, 1)
 
 # empty.txt contains only newlines and comments
 i = 1
@@ -110,7 +112,7 @@ end
 
 println("Testing length(s::SVMLightFile)")
 
-@test length(SVMLightFile("test.txt")) == size(X, 2)
+@test length(SVMLightFile("test.txt")) == size(X, 1)
 
 
 println("Testing List Comprehensions")

@@ -37,7 +37,7 @@ function read_next_data(s::SVMLightFile)
         try
             ((indices, values), label) = line_to_data(line)
             vector = sparsevector(s, indices, values)
-            return (vector, label)
+            return vector, label
         catch error
             if isa(error, NoDataException)
                 # do nothing
