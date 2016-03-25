@@ -4,7 +4,6 @@
 # License is MIT
 
 
-#TODO make this immutable
 immutable SVMLightFile{HASDIM}
     file::IOStream
     ndim::Int
